@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <errno.h>
 
+//for system
+#include <stdlib.h>
+
 //for sleep
 #include <unistd.h>
 
@@ -21,7 +24,8 @@
 //returns nonzero if prover is lying to us
 int give_prover_try(int fd, sat3 *pubkey){
 	sat3 thistry;
-	int bytesread = read(fd, &(thistry.clauses), sizeof(thistry.clauses));//not endian safe
+	int bytesread = read(fd, &(thistry.clauses), sizeof(thistry.clauses));
+	ntohsat3(&thistry);
 	if(bytesread != sizeof(thistry.clauses)){
 		printf("prover did not send the whole set of clauses!\n");
 		return -1;
@@ -110,7 +114,10 @@ int listen_for_provers(short port, sat3 *goal){
 				break;
 		}
 		close(connfd);
-		if(i == NUMTRIES){printf("this fellow passes!\n");}
+		if(i == NUMTRIES){
+			printf("this fellow passes!\nrunning ./zkpsuccess.sh...\n");
+			system("./zkpsuccess.sh");
+		}
 		else{
 			printf("failed after %d attempts, rate limiting\n", i);
 			sleep(FAILDELAY);//rate limit to prevent brute force
@@ -123,6 +130,7 @@ int send_prove_try(int fd, sat3 *privkey){
 	sat3 permuted = *privkey;
 	char whichtheywant = 0;
 	permutesat3(&permuted);
+	htonsat3(&permuted);//prep for sending
 	//printsat3(&permuted);
 	if(write(fd, &permuted.clauses[0], sizeof(permuted.clauses)) != sizeof(permuted.clauses)){
 		printf("failed to send clauses!\n");
@@ -163,7 +171,7 @@ int send_prove_request(char host[], short port, sat3 *privkey){
 		close(sock);
 		return -1;
 	}
-	if(connect(sock, (struct sockaddr*)(&sendtoaddr), sizeof(sendtoaddr)) < 0){
+	if(connect(sock, (struct sockaddr*)(&sendtoaddr), sizeof(sendtoaddr)) != 0){
 		printf("could not connect to host\n");
 		close(sock);
 		return -1;
@@ -182,32 +190,50 @@ int send_prove_request(char host[], short port, sat3 *privkey){
 
 
 
-int cmain(){
+int cmain(int argc, char *argv[]){
+	char *destip = "127.0.0.1";
+	if(argc > 1)
+		destip = argv[1];
 	sat3 mysecret;
 	loadsat3(&mysecret, "privkey.bin");
 	printsat3(&mysecret);
 	printstatsat3(&mysecret);
 
-	send_prove_request("127.0.0.1", 8600, &mysecret);
+	//send_prove_request("127.0.0.1", 8600, &mysecret);
+	
+	send_prove_request(destip, 8600, &mysecret);
 	printf("sat3 is %d bytes\n", sizeof(sat3));
 
 }
-int smain(){
+int smain(int argc, char *argv[]){
+	sat3 pubkey;
+//	newsat3(&pubkey);//generate private key
+//	savesat3(&pubkey, "privkey.bin");//write for client to use
+	loadsat3(&pubkey, "pubkey.bin");
+//	clearanssat3(&pubkey);//forget the private parts
+	printsat3(&pubkey);
+
+	listen_for_provers(8600, &pubkey);
+}
+int gmain(int argc, char *argv[]){
 	sat3 pubkey;
 	newsat3(&pubkey);//generate private key
 	savesat3(&pubkey, "privkey.bin");//write for client to use
 	clearanssat3(&pubkey);//forget the private parts
-	printsat3(&pubkey);
-
-	listen_for_provers(8600, &pubkey);
-
-
+	savesat3(&pubkey, "pubkey.bin");//write for client to use
+//	clearanssat3(&pubkey);//forget the private parts
+//	printsat3(&pubkey);
+//	listen_for_provers(8600, &pubkey);
 }
 
-int main(){
+int main(int argc, char *argv[]){
 #ifdef CLIENT
-	cmain();
+	cmain(argc, argv);
 #else
-	smain();
+#ifdef GENERATOR
+	gmain(argc, argv);
+#else
+	smain(argc, argv);
+#endif
 #endif
 }

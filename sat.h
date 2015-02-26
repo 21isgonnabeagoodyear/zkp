@@ -27,10 +27,13 @@ void printsat3(sat3 *s);
 void applytransformsat3(sat3 *s);
 //1 = good, 0 = bad
 int checksat3(sat3 *s);
-void loadsat3(sat3 *s, char fn[]);
-void savesat3(sat3 *s, char fn[]);
+int loadsat3(sat3 *s, char fn[]);
+int savesat3(sat3 *s, char fn[]);
 void clearanssat3(sat3 *s);
 void printstatsat3(sat3 *s);
+
+void ntohsat3(sat3 *s);
+void htonsat3(sat3 *s);
 
 
 #endif

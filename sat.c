@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
+//for ntohl/htonl
+#include <arpa/inet.h>
+
 #include "rng.h"
 
 static int compareints(const void* p1, const void* p2){
@@ -200,7 +203,7 @@ void printstatsat3(sat3 *s){
 		}
 	}
 	for(i=0;i<NUMVARIABLES;i++)
-		printf("%d occurs %d times and inverted %d times\n", i, counts[i], counts[i|0x80]);
+		printf("%d occurs %d times\n"/* and inverted %d times\n"*/, i, counts[i]/*, counts[i|0x80]*/);
 	int occurrencecounts[NUMCLAUSES*3] = {0};
 	for(i=0;i</*NUMVARIABLES*/0xff;i++)
 		occurrencecounts[counts[i]] ++;
@@ -239,27 +242,43 @@ void printstatsat3(sat3 *s){
 }
 
 
-void loadsat3(sat3 *s, char fn[]){
+int loadsat3(sat3 *s, char fn[]){
 	FILE *f = fopen(fn, "r");
 	if(f == NULL){
 		printf("could not open file %s\n", fn);
-		return;
+		return -1;
 	}
 	fread(s, sizeof(sat3), 1, f);
 	fclose(f);
+	ntohsat3(s);
+	return 0;
 }
-void savesat3(sat3 *s, char fn[]){
+int savesat3(sat3 *s, char fn[]){
 	FILE *f = fopen(fn, "w");
 	if(f == NULL){
 		printf("could not open file %s\n", fn);
-		return;
+		return -1;
 	}
+	htonsat3(s);
 	fwrite(s, sizeof(sat3), 1, f);
+	ntohsat3(s);
 	fclose(f);
+	return 0;
 }
 
 void clearanssat3(sat3 *s){
 	int i;
 	for(i=0;i<NUMVARIABLES;i++)
 		s->variables[i] = 0;
+}
+
+void ntohsat3(sat3 *s){
+	int i;
+	for(i=0;i<NUMCLAUSES;i++)
+		s->clauses[i] = ntohl(s->clauses[i]);
+}
+void htonsat3(sat3 *s){
+	int i;
+	for(i=0;i<NUMCLAUSES;i++)
+		s->clauses[i] = htonl(s->clauses[i]);
 }
