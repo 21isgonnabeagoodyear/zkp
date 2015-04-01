@@ -2,8 +2,12 @@
 #define SAT_H
 
 
+//128 bit key
+//#define VARIABLEMASK 0x7f
 //64 bit key
-#define VARIABLEMASK 0x7f
+//#define VARIABLEMASK 0x3f
+//1f is 32 bit key
+#define VARIABLEMASK 0x1f
 #define NUMVARIABLES (VARIABLEMASK+1)
 #define CLAUSEMASK ((VARIABLEMASK|0x80)<<24 | (VARIABLEMASK|0x80)<<16 | (VARIABLEMASK|0x80)<<8)
 //#define NUMCLAUSES 256
