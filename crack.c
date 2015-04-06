@@ -4,7 +4,14 @@
 
 sat3 crack(sat3 tocheck, unsigned long long startat, /*this is pretty terrible*/unsigned long long *endedat){
 	int i;
-	for(; startat < ((((unsigned long long)(1)) << NUMVARIABLES+1)|(((unsigned long long)(1))<<(sizeof(startat)*8-1)))/*because NUMVARIABLES can be > 64*/;startat++)
+	//FIXME: for some reason this doesn't stop
+/*k
+	if(startat >= (unsigned long long)(((unsigned long long)(1)) << NUMVARIABLES)){
+		//if(endedat != NULL)*endedat = startat;
+		return tocheck;
+	}
+*/
+	for(; startat < (unsigned long long)(((unsigned long long)(1)) << NUMVARIABLES)/*NUMVARIABLES can be > 64 but fuck it*/;startat++)
 	{
 //printf("%d\n", startat);
 		for(i=0;i<NUMVARIABLES;i++)
@@ -21,21 +28,22 @@ sat3 crack(sat3 tocheck, unsigned long long startat, /*this is pretty terrible*/
 	}
 
 	printf("failed to crack key\n");
-	if(endedat != NULL)*endedat = startat;
+	//if(endedat != NULL)*endedat = startat;
 	return tocheck;//magnets
 }
 
 /*
 search the entire keyspace and count the solutions
 */
-long long countsolutions(sat3 tocheck){
-	unsigned long long next = 0;
-	unsigned long long prev = 1;
+long long countsolutions(sat3 tocheck, unsigned long long startat){
+	unsigned long long next = startat;
+	unsigned long long prev = -1;
 	long long count = 0;
 	while(prev != next){
 		prev = next;
 		crack(tocheck, next+1, &next);
-		printf("found solution: 0x%x\n",next);
+		if(prev != next)
+			printf("found solution: 0x%lx\n",next);
 		count ++;
 	}
 	return count-1;
@@ -57,7 +65,7 @@ void main(int argc, char *argv[]){
 	sat3 cracked = crack(tocrack, startat*1000000000, NULL);
 	printsat3(&cracked);
 */
-	printf("%d solutions\n", countsolutions(tocrack));
+	printf("%d solutions\n", countsolutions(tocrack, startat*(unsigned long long)(1000000000)));
 
 	
 

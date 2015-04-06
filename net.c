@@ -119,7 +119,8 @@ int listen_for_provers(short port, sat3 *goal){
 			system("./zkpsuccess.sh");
 		}
 		else{
-			printf("failed after %d attempts, rate limiting\n", i);
+			printf("failed after %d attempts, rate limiting and running ./zkpfail.sh\n", i);
+			system("./zkpfail.sh");
 			sleep(FAILDELAY);//rate limit to prevent brute force
 		}
 	}
