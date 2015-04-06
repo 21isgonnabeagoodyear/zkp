@@ -1,0 +1,35 @@
+zkp proving system
+
+This system allows you to perform zero knowledge proofs (based on 1-in-3 SAT3) for authentication.  
+
+==========================
+building
+==========================
+To build with native gcc just run make.  
+To cross compile for OpenWRT you will need to first build an OpenWRT Buildroot.  Then you must set PATH to include openwrt/staging_dir/toolchain-<your setup>/bin and set STAGING_DIR to openwrt/staging_dir/.  Then you can build with make glinet.  
+
+==========================
+generating keys
+==========================
+Run testgen (or testgen_glinet on OpenWRT) to generate a key.  The public key will be saved to pubkey.bin and the private key will be saved to privkey.bin.
+
+==========================
+starting a server
+==========================
+Run testlisten (or testlisten_glinet) to listen on port 8600 on all interfaces for incoming provers.  The public key must be in the current directory and called pubkey.bin.  If the public key is updated the server must be restarted.
+
+
+==========================
+authenticating
+==========================
+Run testsend (or testsend_glinet) with the destination ip as the only argument.  If run with no arguments it will connect to localhost.  The private key must be in the current directory and called privkey.bin.
+
+==========================
+customizing scripts
+==========================
+The scripts zkpsuccess.sh and zkpfail.sh are run when a prover successfully authenticates or is caught using an invalid private key respectively.  By default on a glinet router these will blink the green and red LEDs; the default LED behavior should be disabled in /etc/config/system.  
+
+==========================
+customizing key size
+==========================
+Key size and the number of clausesmay be customized by modifying the constants in sat.h.  To change the key size set VARIABLEMASK to that minus one.  Keys must be powers of two.  The maximum key size is 256 bits.  The number of clauses can be specified with NUMCLAUSES and is by default equal to the number of variables.  Large values of NUMCLAUSES tend to be more vulnerable to statistical analysis, while very low numbers are more vulnerable to brute force attacks.  Finding the optimal value of NUMCLAUSES is left as an exercise for the reader.  A better algorithm for generating keys may reduce the problem of statistical analysis and make larger sets of clauses strictly better. 
